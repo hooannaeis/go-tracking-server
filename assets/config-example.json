@@ -1,0 +1,63 @@
+{
+  "flows": [
+    {
+      "id": 0,
+      "name": "collect curl",
+      "responsibilities": [
+        {
+          "where": "request.URL.Path",
+          "what": "/collect",
+          "how": "equalsTrue"
+        },
+        {
+          "where": "request.Header.User-Agent",
+          "what": "curl",
+          "how": "containsTrue"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "collect firefox",
+      "responsibilities": [
+        {
+          "where": "request.URL.Path",
+          "what": "/collect",
+          "how": "equalsTrue"
+        },
+        {
+          "where": "request.Header.User-Agent",
+          "what": "Firefox",
+          "how": "containsTrue"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "postman postman",
+      "responsibilities": [
+        {
+          "where": "request.URL.Path",
+          "what": "/postman",
+          "how": "equalsTrue"
+        },
+        {
+          "where": "request.Header.User-Agent",
+          "what": "Postman",
+          "how": "containsTrue"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "contains not-collect",
+      "responsibilities": [
+        {
+          "where": "request.URL.RequestURI",
+          "what": "not-collect",
+          "how": "containsTrue"
+        }
+      ]
+    }
+  ]
+}
