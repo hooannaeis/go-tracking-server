@@ -14,6 +14,12 @@
           "what": "curl",
           "how": "containsTrue"
         }
+      ],
+      "eventKeys": [
+        {
+          "where": "Function.Hostname",
+          "what": "Hostname"
+        }
       ]
     },
     {
@@ -29,6 +35,24 @@
           "where": "request.Header.User-Agent",
           "what": "Firefox",
           "how": "containsTrue"
+        }
+      ],
+      "eventKeys": [
+        {
+          "where": "Function.Hostnamename",
+          "what": "Hostname"
+        },
+        {
+          "where": "Function.Path",
+          "what": "Path"
+        },
+        {
+          "where": "Get.User-Agent",
+          "what": "User-Agent"
+        },
+        {
+          "where": "Function.IP",
+          "what": "Remote IP"
         }
       ]
     },
@@ -46,6 +70,24 @@
           "what": "Postman",
           "how": "containsTrue"
         }
+      ],
+      "eventKeys": [
+        {
+          "where": "Function.Hostname",
+          "what": "Hostname"
+        },
+        {
+          "where": "Function.Path",
+          "what": "Path"
+        },
+        {
+          "where": "Get.User-Agent",
+          "what": "User-Agent"
+        },
+        {
+          "where": "Function.IP",
+          "what": "Remote IP"
+        }
       ]
     },
     {
@@ -56,6 +98,24 @@
           "where": "request.URL.RequestURI",
           "what": "not-collect",
           "how": "containsTrue"
+        }
+      ],
+      "eventKeys": [
+        {
+          "where": "Function.Hostname",
+          "what": "Hostname"
+        },
+        {
+          "where": "Function.Path",
+          "what": "Path"
+        },
+        {
+          "where": "Get.User-Agent",
+          "what": "User-Agent"
+        },
+        {
+          "where": "Function.IP",
+          "what": "Remote IP"
         }
       ]
     }

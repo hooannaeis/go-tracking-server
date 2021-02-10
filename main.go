@@ -18,12 +18,18 @@ type Flow struct {
 	Id               int              `json:"id"`
 	Name             string           `json:"name"`
 	Responsibilities []Responsibility `json:"responsibilities"`
+	EventKeys        []WhatWhere      `json:"eventKeys"`
 }
 
 type Responsibility struct {
 	Where string `json:"where"`
 	What  string `json:"what"`
 	How   string `json:"how"`
+}
+
+type WhatWhere struct {
+	Where string `json:"where"`
+	What  string `json:"what"`
 }
 
 func main() {
@@ -63,7 +69,7 @@ func isThisFlowResponsible(flow Flow, c *fiber.Ctx) bool {
 			case "URL":
 				if parts[2] == "Path" {
 					where = c.Path()
-				} else if parts[2] == "Host" {
+				} else if parts[2] == "Hostname" {
 					where = c.Hostname()
 				} else if parts[2] == "RequestURI" {
 					where = c.Hostname() + c.Path()
@@ -130,10 +136,9 @@ func Setup() *fiber.App {
 	app.Get("/*", func(c *fiber.Ctx) error {
 		fmt.Println("----------------------")
 		flow, claimed := getResponsibleFlow(c)
-		test := "User-Agent"
-		fmt.Println(c.Get(test))
 
 		if claimed {
+			GetEventData(c, flow)
 			return c.JSON(flow)
 		} else {
 			return c.Status(404).SendString("no flow is responsible for this path")
@@ -141,4 +146,23 @@ func Setup() *fiber.App {
 	})
 
 	return app
+}
+
+func GetEventData(c *fiber.Ctx, flow Flow) {
+	fmt.Println("----------------------")
+	for _, eventKey := range flow.EventKeys {
+		whereParts := strings.Split(eventKey.Where, ".")
+		if whereParts[0] == "Function" {
+			switch whereParts[1] {
+			case "Hostname":
+				fmt.Printf("the %s is %q", eventKey.What, c.Hostname())
+			case "Path":
+				fmt.Printf("the %s is %q", eventKey.What, c.Path())
+			case "IP":
+				fmt.Printf("the %s is %q", eventKey.What, c.IP())
+			}
+		} else if whereParts[0] == "Get" {
+			fmt.Printf("the %s is %q", eventKey.What, c.Get(whereParts[1]))
+		}
+	}
 }
