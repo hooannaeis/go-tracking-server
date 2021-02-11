@@ -114,6 +114,10 @@
           "what": "User-Agent"
         },
         {
+          "where": "Get.Origin",
+          "what": "Origin"
+        },
+        {
           "where": "Function.IP",
           "what": "Remote IP"
         }

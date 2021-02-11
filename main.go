@@ -32,6 +32,17 @@ type WhatWhere struct {
 	What  string `json:"what"`
 }
 
+type Event struct {
+	Hostname string
+	Path     string
+	RemoteIp string
+	Headers  map[string]*Header
+}
+
+type Header struct {
+	value string
+}
+
 func main() {
 	// Use an external setup function in order
 	// to configure the app in tests as well
@@ -138,7 +149,11 @@ func Setup() *fiber.App {
 		flow, claimed := getResponsibleFlow(c)
 
 		if claimed {
-			GetEventData(c, flow)
+			event := GetEventData(c, flow)
+			fmt.Println("----------------------")
+			fmt.Println(event)
+			fmt.Println("----------------------")
+
 			return c.JSON(flow)
 		} else {
 			return c.Status(404).SendString("no flow is responsible for this path")
@@ -148,21 +163,41 @@ func Setup() *fiber.App {
 	return app
 }
 
-func GetEventData(c *fiber.Ctx, flow Flow) {
-	fmt.Println("----------------------")
+func GetEventData(c *fiber.Ctx, flow Flow) Event {
+	event := new(Event)
+
 	for _, eventKey := range flow.EventKeys {
 		whereParts := strings.Split(eventKey.Where, ".")
-		if whereParts[0] == "Function" {
-			switch whereParts[1] {
+		whereMethod := whereParts[0]
+		whereKey := whereParts[1]
+
+		// match the keys to their corresponding function-equivalents
+		if whereMethod == "Function" {
+			switch whereKey {
 			case "Hostname":
-				fmt.Printf("the %s is %q", eventKey.What, c.Hostname())
+				event.Hostname = c.Hostname()
 			case "Path":
-				fmt.Printf("the %s is %q", eventKey.What, c.Path())
+				event.Path = c.Path()
 			case "IP":
-				fmt.Printf("the %s is %q", eventKey.What, c.IP())
+				event.RemoteIp = c.IP()
 			}
-		} else if whereParts[0] == "Get" {
-			fmt.Printf("the %s is %q", eventKey.What, c.Get(whereParts[1]))
+		} else if whereMethod == "Get" {
+			// check if the current event already has
+			// a .Headers mpa
+			headers := event.Headers
+			if len(headers) == 0 {
+				// initialize a map of strings that point to
+				// structs of type Header
+				event.Headers = make(map[string]*Header)
+			}
+
+			header, headerExists := event.Headers[whereKey]
+			if !headerExists {
+				header = &Header{}
+			}
+			event.Headers[whereKey] = header
+			event.Headers[whereKey].value = c.Get(whereKey)
 		}
 	}
+	return *event
 }
