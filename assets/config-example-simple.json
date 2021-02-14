@@ -1,0 +1,66 @@
+{
+  "flows": [
+    {
+      "id": 3,
+      "name": "contains not-collect",
+      "responsibilities": [
+        {
+          "where": "request.URL.RequestURI",
+          "what": "not-collect",
+          "how": "containsTrue"
+        }
+      ],
+      "eventKeys": [
+        {
+          "where": "Function.Hostname",
+          "what": "Hostname"
+        },
+        {
+          "where": "Function.Path",
+          "what": "Path"
+        },
+        {
+          "where": "Get.User-Agent",
+          "what": "User-Agent"
+        },
+        {
+          "where": "Get.Origin",
+          "what": "Origin"
+        },
+        {
+          "where": "Function.IP",
+          "what": "Remote IP"
+        }
+      ],
+      "actions": [
+        {
+          "what": "forward",
+          "howForward": {
+            "requestMethod": "GET",
+            "headers": [
+              {
+                "where": "user-agent",
+                "what": "Headers.User-Agent"
+              },
+              {
+                "where": "x-forwarded-for",
+                "what": "Remote IP"
+              }
+            ],
+            "query": [
+              {
+                "where": "o",
+                "what": "Origin"
+              },
+              {
+                "where": "p",
+                "what": "Path"
+              }
+            ]
+          },
+          "where": "https://hookb.in/3Ow0rkpweruEwwjBWPLx"
+        }
+      ]
+    }
+  ]
+}
