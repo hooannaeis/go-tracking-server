@@ -12,24 +12,22 @@
       ],
       "eventKeys": [
         {
-          "where": "Function.Hostname",
-          "what": "Hostname"
+          "where": "Function.Hostname"
         },
         {
-          "where": "Function.Path",
-          "what": "Path"
+          "where": "Function.Path"
         },
         {
-          "where": "Get.User-Agent",
-          "what": "User-Agent"
+          "where": "Header.User-Agent"
         },
         {
-          "where": "Get.Origin",
-          "what": "Origin"
+          "where": "Query.first"
         },
         {
-          "where": "Function.IP",
-          "what": "Remote IP"
+          "where": "Query.second"
+        },
+        {
+          "where": "Function.IP"
         }
       ],
       "actions": [
@@ -40,25 +38,54 @@
             "headers": [
               {
                 "where": "user-agent",
-                "what": "Headers.User-Agent"
+                "what": "Header.User-Agent"
               },
               {
                 "where": "x-forwarded-for",
-                "what": "Remote IP"
+                "what": "Function.IP"
               }
             ],
             "query": [
               {
-                "where": "o",
-                "what": "Origin"
+                "where": "m",
+                "what": "Query.first"
               },
               {
                 "where": "p",
-                "what": "Path"
+                "what": "Function.Path"
               }
             ]
           },
-          "where": "https://hookb.in/3Ow0rkpweruEwwjBWPLx"
+          "where": "https://enzvnwzt7nkog.x.pipedream.net/",
+          "then": [
+            {
+              "what": "forward",
+              "howForward": {
+                "requestMethod": "GET",
+                "headers": [
+                  {
+                    "where": "user-agent",
+                    "what": "Headers.User-Agent"
+                  },
+                  {
+                    "where": "x-forwarded-for",
+                    "what": "Function.IP"
+                  }
+                ],
+                "query": [
+                  {
+                    "where": "m",
+                    "what": "Query.second"
+                  },
+                  {
+                    "where": "p",
+                    "what": "Function.Path"
+                  }
+                ]
+              },
+              "where": "https://enzvnwzt7nkog.x.pipedream.net/"
+            }
+          ]
         }
       ]
     }

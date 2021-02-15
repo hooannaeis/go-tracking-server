@@ -34,7 +34,7 @@ func TestIndexRoute(t *testing.T) {
 	}
 
 	// Setup the app as it is done in the main function
-	app := Setup()
+	app := setup()
 
 	// Iterate through test single test cases
 	for _, test := range tests {

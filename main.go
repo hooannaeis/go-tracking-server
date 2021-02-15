@@ -22,7 +22,7 @@ type Flow struct {
 	Name             string               `json:"name"`
 	Responsibilities []WhatWhereHowString `json:"responsibilities"`
 	EventKeys        []WhatWhereHowString `json:"eventKeys"`
-	Actions          []Action             `json:"actions"`
+	Actions          []*Action            `json:"actions"`
 }
 
 // WhatWhereHowString has all optional parameters giving specifics for a Flow-task
@@ -50,10 +50,7 @@ type HowForward struct {
 
 // Event describes all possible parameters that an event can have
 type Event struct {
-	Hostname string
-	Path     string
-	RemoteIP string
-	Headers  map[string]*ValueString
+	Data map[string]*ValueString
 }
 
 // ValueString only has a value
@@ -68,6 +65,31 @@ func main() {
 
 	// start the application on http://localhost:3000
 	log.Fatal(app.Listen(":3000"))
+}
+
+func setup() *fiber.App {
+	// Initialize a new app
+	app := fiber.New()
+
+	app.Get("/*", func(c *fiber.Ctx) error {
+		fmt.Println("----------------------")
+		flow, claimed := getResponsibleFlow(c)
+
+		if claimed {
+			event := getEventData(c, flow)
+			fmt.Println("----------------------")
+			fmt.Println(event)
+			fmt.Println("----------------------")
+
+			// @todo: add possibility for action
+			// to change response
+			runActions(flow.Actions, event)
+			return c.JSON(flow)
+		}
+		return c.Status(404).SendString("no flow is responsible for this path")
+	})
+
+	return app
 }
 
 func getInitConfig() Flows {
@@ -103,7 +125,8 @@ func isThisFlowResponsible(flow Flow, c *fiber.Ctx) bool {
 				} else if parts[2] == "RequestURI" {
 					where = c.Hostname() + c.Path()
 				}
-				// @TODO: add option for url-query parameters
+			case "Query":
+				where = c.Query(parts[2])
 			case "Header":
 				where = c.Get(parts[2])
 			default:
@@ -159,31 +182,6 @@ func getResponsibleFlow(c *fiber.Ctx) (Flow, bool) {
 	return claimingFlow, requestHasBeenClaimed
 }
 
-func setup() *fiber.App {
-	// Initialize a new app
-	app := fiber.New()
-
-	app.Get("/*", func(c *fiber.Ctx) error {
-		fmt.Println("----------------------")
-		flow, claimed := getResponsibleFlow(c)
-
-		if claimed {
-			event := getEventData(c, flow)
-			fmt.Println("----------------------")
-			fmt.Println(event)
-			fmt.Println("----------------------")
-
-			runActions(flow.Actions, event)
-
-			return c.JSON(flow)
-		} else {
-			return c.Status(404).SendString("no flow is responsible for this path")
-		}
-	})
-
-	return app
-}
-
 func getEventData(c *fiber.Ctx, flow Flow) Event {
 	event := new(Event)
 
@@ -191,39 +189,45 @@ func getEventData(c *fiber.Ctx, flow Flow) Event {
 		whereParts := strings.Split(eventKey.Where, ".")
 		whereMethod := whereParts[0]
 		whereKey := whereParts[1]
+		var eventValue string
+
+		// check if the current event already has
+		// a .Headers mpa
+		eventData := event.Data
+		if len(eventData) == 0 {
+			// initialize a map of strings that point to
+			// structs of type ValueString
+			event.Data = make(map[string]*ValueString)
+		}
+
+		data, dataExists := event.Data[eventKey.Where]
+		if !dataExists {
+			data = &ValueString{}
+		}
+		event.Data[eventKey.Where] = data
 
 		// match the keys to their corresponding function-equivalents
 		if whereMethod == "Function" {
 			switch whereKey {
 			case "Hostname":
-				event.Hostname = c.Hostname()
+				eventValue = c.Hostname()
 			case "Path":
-				event.Path = c.Path()
+				eventValue = c.Path()
 			case "IP":
-				event.RemoteIP = c.IP()
+				eventValue = c.IP()
 			}
-		} else if whereMethod == "Get" {
-			// check if the current event already has
-			// a .Headers mpa
-			headers := event.Headers
-			if len(headers) == 0 {
-				// initialize a map of strings that point to
-				// structs of type ValueString
-				event.Headers = make(map[string]*ValueString)
-			}
-
-			header, headerExists := event.Headers[whereKey]
-			if !headerExists {
-				header = &ValueString{}
-			}
-			event.Headers[whereKey] = header
-			event.Headers[whereKey].value = c.Get(whereKey)
+		} else if whereMethod == "Header" {
+			eventValue = c.Get(whereKey)
+		} else if whereMethod == "Query" {
+			eventValue = c.Query(whereKey)
 		}
+
+		event.Data[eventKey.Where].value = eventValue
 	}
 	return *event
 }
 
-func runActions(actions []Action, e Event) {
+func runActions(actions []*Action, e Event) {
 	for _, action := range actions {
 		switch action.What {
 		case "forward":
@@ -237,22 +241,33 @@ func runActions(actions []Action, e Event) {
 			}
 
 			for _, headerToAdd := range action.HowForward.Headers {
-				req.Header.Add(headerToAdd.Where, headerToAdd.What)
+				header, headerExists := e.Data[headerToAdd.What]
+				if headerExists {
+					req.Header.Add(headerToAdd.Where, header.value)
+				}
 			}
 			resp, respErr := client.Do(req)
 			if respErr != nil {
 				log.Fatal(respErr)
-				return
 			}
+			// @TODO add response data to event object
+			// so that the next action can use it
 
 			fmt.Println("forward action", resp)
 		case "process":
 			fmt.Println("process action")
 		}
+
+		nextAction := action.Then
+		if nextAction != nil {
+			runActions(nextAction, e)
+		}
 	}
 }
 
-func makeRequestURL(action Action, e Event) string {
+// goes through the current action and adds the query parameters that
+// it defined to the request-URL
+func makeRequestURL(action *Action, e Event) string {
 	url := action.Where
 	for idx, query := range action.HowForward.Query {
 		if idx == 0 {
@@ -260,7 +275,13 @@ func makeRequestURL(action Action, e Event) string {
 		} else {
 			url += "&"
 		}
-		url += query.Where + "=" + query.What
+
+		data, dataExists := e.Data[query.What]
+		if dataExists {
+			url += query.Where + "=" + data.value
+		} else {
+			fmt.Printf("no key %s exists on eventData", query.What)
+		}
 	}
 	return url
 }
