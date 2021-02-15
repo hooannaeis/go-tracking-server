@@ -1,4 +1,4 @@
-module main
+module tracking-server
 
 go 1.15
 

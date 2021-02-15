@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"tracking-server/utils/processfactory"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -72,6 +73,7 @@ func setup() *fiber.App {
 	app := fiber.New()
 
 	app.Get("/*", func(c *fiber.Ctx) error {
+		fmt.Println(processfactory.DoProcess("127.0.0.123", "getAnonymizedIP"))
 		fmt.Println("----------------------")
 		flow, claimed := getResponsibleFlow(c)
 
