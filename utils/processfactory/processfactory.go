@@ -1,12 +1,14 @@
 package processfactory
 
 import (
+	"fmt"
 	"strings"
 )
 
 // DoProcess will return the processed value
 // you can directly assign to the "where" of the event
 func DoProcess(what string, how string) string {
+	fmt.Printf("processing %s with %q\n", what, how)
 	processedValue := "no such function: " + how
 	switch how {
 	case "getAnonymizedIP":

@@ -76,6 +76,41 @@
                 ]
               },
               "where": "https://enzvnwzt7nkog.x.pipedream.net/"
+            },
+            {
+              "what": "forward",
+              "howForward": {
+                "requestMethod": "GET",
+                "headers": [
+                  {
+                    "where": "user-agent",
+                    "what": "Header.User-Agent"
+                  },
+                  {
+                    "where": "x-forwarded-for",
+                    "what": "Function.IP"
+                  }
+                ],
+                "query": [
+                  {
+                    "where": "m",
+                    "what": "Query.second"
+                  },
+                  {
+                    "where": "p",
+                    "what": "Function.Path"
+                  },
+                  {
+                    "where": "h",
+                    "what": "Function.Hostname"
+                  },
+                  {
+                    "where": "cs",
+                    "what": "Custom.Secret"
+                  }
+                ]
+              },
+              "where": "https://enzvnwzt7nkog.x.pipedream.net/"
             }
           ]
         }
