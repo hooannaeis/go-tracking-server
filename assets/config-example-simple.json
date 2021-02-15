@@ -32,31 +32,19 @@
       ],
       "actions": [
         {
-          "what": "forward",
-          "howForward": {
-            "requestMethod": "GET",
-            "headers": [
-              {
-                "where": "user-agent",
-                "what": "Header.User-Agent"
-              },
-              {
-                "where": "x-forwarded-for",
-                "what": "Function.IP"
-              }
-            ],
-            "query": [
-              {
-                "where": "m",
-                "what": "Query.first"
-              },
-              {
-                "where": "p",
-                "what": "Function.Path"
-              }
-            ]
-          },
-          "where": "https://enzvnwzt7nkog.x.pipedream.net/",
+          "what": "process",
+          "howProcess": [
+            {
+              "what": "Function.IP",
+              "where": "Function.IP",
+              "how": "getAnonymizedIP"
+            },
+            {
+              "what": "aslfödkajösdflkajsö",
+              "where": "Custom.Secret",
+              "how": "addToEvent"
+            }
+          ],
           "then": [
             {
               "what": "forward",
@@ -65,7 +53,7 @@
                 "headers": [
                   {
                     "where": "user-agent",
-                    "what": "Headers.User-Agent"
+                    "what": "Header.User-Agent"
                   },
                   {
                     "where": "x-forwarded-for",
@@ -75,11 +63,15 @@
                 "query": [
                   {
                     "where": "m",
-                    "what": "Query.second"
+                    "what": "Query.first"
                   },
                   {
                     "where": "p",
                     "what": "Function.Path"
+                  },
+                  {
+                    "where": "cs",
+                    "what": "Custom.Secret"
                   }
                 ]
               },

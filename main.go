@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 	"tracking-server/utils/processfactory"
 
@@ -35,10 +36,11 @@ type WhatWhereHowString struct {
 
 // Action describes the specifics of an action
 type Action struct {
-	What       string     `json:"what"`
-	Where      string     `json:"where,omitempty"`
-	HowForward HowForward `json:"howForward,omitempty"`
-	Then       []*Action  `json:"then,omitempty"`
+	What       string               `json:"what"`
+	Where      string               `json:"where,omitempty"`
+	HowForward HowForward           `json:"howForward,omitempty"`
+	HowProcess []WhatWhereHowString `json:"howProcess,omitempty"`
+	Then       []*Action            `json:"then,omitempty"`
 }
 
 // HowForward describes what a forward action looks like
@@ -73,7 +75,6 @@ func setup() *fiber.App {
 	app := fiber.New()
 
 	app.Get("/*", func(c *fiber.Ctx) error {
-		fmt.Println(processfactory.DoProcess("127.0.0.123", "getAnonymizedIP"))
 		fmt.Println("----------------------")
 		flow, claimed := getResponsibleFlow(c)
 
@@ -97,7 +98,7 @@ func setup() *fiber.App {
 func getInitConfig() Flows {
 	file, err := ioutil.ReadFile("assets/config-example-simple.json")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("error getting coning: %s", err)
 	}
 
 	flows := Flows{}
@@ -254,10 +255,23 @@ func runActions(actions []*Action, e Event) {
 			}
 			// @TODO add response data to event object
 			// so that the next action can use it
-
+			fmt.Println("----------------------")
 			fmt.Println("forward action", resp)
 		case "process":
+			fmt.Println("----------------------")
 			fmt.Println("process action")
+			for _, processToRun := range action.HowProcess {
+				processMethod := processToRun.How
+				_, existsInEvent := e.Data[processToRun.What]
+				var valueToProcess string
+				if existsInEvent {
+					valueToProcess = e.Data[processToRun.What].value
+				} else {
+					valueToProcess = processToRun.What
+				}
+				processedValue := processfactory.DoProcess(valueToProcess, processMethod)
+				e.Data[processToRun.Where] = &ValueString{value: processedValue}
+			}
 		}
 
 		nextAction := action.Then
@@ -270,20 +284,15 @@ func runActions(actions []*Action, e Event) {
 // goes through the current action and adds the query parameters that
 // it defined to the request-URL
 func makeRequestURL(action *Action, e Event) string {
-	url := action.Where
-	for idx, query := range action.HowForward.Query {
-		if idx == 0 {
-			url += "?"
-		} else {
-			url += "&"
-		}
-
+	params := url.Values{}
+	for _, query := range action.HowForward.Query {
 		data, dataExists := e.Data[query.What]
 		if dataExists {
-			url += query.Where + "=" + data.value
+			params.Add(query.Where, data.value)
 		} else {
 			fmt.Printf("no key %s exists on eventData", query.What)
 		}
 	}
-	return url
+	requestURL := action.Where + "?" + params.Encode()
+	return requestURL
 }
