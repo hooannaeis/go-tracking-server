@@ -16,6 +16,7 @@ func DoProcess(what string, how string) string {
 	case "addToEvent":
 		processedValue = what
 		//@todo: add more process-options
+		// - regex replace
 	}
 	return processedValue
 }
